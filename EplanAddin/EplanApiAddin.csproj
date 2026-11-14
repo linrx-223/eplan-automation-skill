@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EPLAN 2.9 是 .NET Framework 进程，AddIn 必须是 net48 程序集。
+       本机无 net48 targeting pack、NuGet 不可达，故用运行时目录当引用程序集目录。 -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <FrameworkPathOverride>C:\Windows\Microsoft.NET\Framework64\v4.0.30319</FrameworkPathOverride>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <EnableDefaultAssemblyReferences>false</EnableDefaultAssemblyReferences>
+    <AssemblyName>EplanApiAddin</AssemblyName>
+    <RootNamespace>EplanApiAddin</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <NoWarn>CS1701;CS1702;NU1701</NoWarn>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <!-- 基础框架引用（指向本机 .NET Framework 运行时目录） -->
+  <ItemGroup>
+    <Reference Include="mscorlib">
+      <HintPath>C:\Windows\Microsoft.NET\Framework64\v4.0.30319\mscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <HintPath>C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core">
+      <HintPath>C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Core.dll</HintPath>
+    </Reference>
+    <!-- CaptureScreen 用的 GDI+ 位图 -->
+    <Reference Include="System.Drawing">
+      <HintPath>C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Drawing.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- EPLAN API 引用 -->
+  <ItemGroup>
+    <Reference Include="Eplan.EplApi.AFu">
+      <HintPath>D:\EPLAN\Platform\2.9.4\Bin\Eplan.EplApi.AFu.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Eplan.EplApi.Baseu">
+      <HintPath>D:\EPLAN\Platform\2.9.4\Bin\Eplan.EplApi.Baseu.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Eplan.EplApi.DataModelu">
+      <HintPath>D:\EPLAN\Platform\2.9.4\Bin\Eplan.EplApi.DataModelu.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Insert 服务（插入符号宏/窗口宏） -->
+    <Reference Include="Eplan.EplApi.HEServicesu">
+      <HintPath>D:\EPLAN\Platform\2.9.4\Bin\Eplan.EplApi.HEServicesu.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

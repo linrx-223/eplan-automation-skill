@@ -1,0 +1,324 @@
+{
+  "$comment": "EPLAN 自动化能力注册表 —— 唯一事实源。新增动作必须在此登记，否则调用直接被拒（unknown capability）。status 语义见 statusLevels。",
+  "version": "1.0.0",
+  "updated": "2026-11-14",
+  "runtime": {
+    "eplan": "2.9.4.14642",
+    "api": "net10.0 WebAPI :5000 → net48 AddIn :5002",
+    "host": "Windows 11 x64"
+  },
+  "statusLevels": {
+    "verified": "真机跑通并复现≥2次，可按 limits 范围放心使用",
+    "pilot": "已实现但未充分回归，结果需人工复核后才可交付",
+    "blocked": "当前实现无法产出真实结果，调用直接返回 CAPABILITY_GAP，不得当作成功"
+  },
+  "actions": {
+    "Ping": {
+      "status": "verified",
+      "layer": "internal",
+      "implemented": true,
+      "produces": "json",
+      "params": {},
+      "verify": {
+        "mode": "none"
+      },
+      "limits": [],
+      "verifiedOn": "2026-10",
+      "notes": "只证明 WebAPI 活着，不证明 EPLAN 活着。要确认 EPLAN 用 GetStatus。"
+    },
+    "GetStatus": {
+      "status": "verified",
+      "layer": "internal",
+      "implemented": true,
+      "produces": "json",
+      "params": {},
+      "verify": {
+        "mode": "none"
+      },
+      "limits": [],
+      "verifiedOn": "2026-11-13",
+      "notes": "新增。并行探测 WebAPI + AddIn(5002)，分别报活。"
+    },
+    "OpenProject": {
+      "status": "pilot",
+      "layer": "script",
+      "implemented": true,
+      "produces": "state",
+      "params": {
+        "path": "string .elk 绝对路径"
+      },
+      "verify": {
+        "mode": "text_ok"
+      },
+      "limits": [
+        "走 /Runscript 命令行注入，2.9.4 下可能撞 LockingStep",
+        "会启动独立 EPLAN 进程，与已开 GUI 可能冲突",
+        "GUI 里已打开的工程无法再 OpenProject（所有 OpenMode 失败），必须走复用路径"
+      ],
+      "verifiedOn": "2026-09",
+      "notes": "更稳的路径是用 AddIn 内的 OpenProjectFlexible（Exclusive 优先）。"
+    },
+    "ExportPdf": {
+      "status": "pilot",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "file",
+      "params": {
+        "project": "string .elk 绝对路径",
+        "outputFile": "string 可选，完整 PDF 路径",
+        "outputDir": "string 可选，缺省 <工程目录>/pdf",
+        "schema": "string 可选，导出方案(.fnx)；空则用 EPLAN 当前方案"
+      },
+      "verify": {
+        "mode": "file_reported",
+        "fileField": "file"
+      },
+      "limits": [
+        "走运行时反射调用 Export.PdfProject / Export.PdfPages，参数表随版本自动适配",
+        "导出前会删掉同名旧 PDF，证据层按 file_reported 核实新文件",
+        "未提供 schema 时依赖 EPLAN 当前 PDF 导出方案，方案为空可能导不出内容",
+        "需要工程能被打开（GUI 已打开的工程走复用路径）"
+      ],
+      "verifiedOn": "2026-11-14 首次实现（反射版），待真机验证落盘",
+      "notes": "旧实现是 Scripts/ExportPdf.cs 占位脚本，返回 success 但不产出文件，已废弃。"
+    },
+    "CreateProject": {
+      "status": "verified",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "state",
+      "params": {},
+      "verify": {
+        "mode": "metrics_min",
+        "field": "opened",
+        "min": 1
+      },
+      "limits": [
+        "项目名与路径硬编码为 物流传输_三段顺序",
+        "FromTemplate 依赖 IEC_bas003_sample_project.zw9，缺失时回退复制 D:\\EPLAN\\项目\\Linrrrx\\新项目.elk",
+        "仅 Exclusive 模式稳定，其余 OpenMode 在本机撞 S063110"
+      ],
+      "verifiedOn": "2026-10 首次；2026-11-13 真机复验 metrics.opened=1",
+      "notes": ""
+    },
+    "CreatePages": {
+      "status": "verified",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "state",
+      "params": {},
+      "verify": {
+        "mode": "metrics_min",
+        "field": "pagesCreated",
+        "min": 1
+      },
+      "limits": [
+        "页名与页数硬编码 5 页",
+        "依赖 AddIn 进程内 _currentProject，跨进程重启后失效"
+      ],
+      "verifiedOn": "2026-10 首次；2026-11-13 真机复验 pagesCreated=5/5",
+      "notes": ""
+    },
+    "DrawMainCircuit": {
+      "status": "pilot",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "drawing",
+      "params": {},
+      "verify": {
+        "mode": "metrics_min",
+        "field": "macrosInserted",
+        "min": 1
+      },
+      "limits": [
+        "宏插入路线：只用宏自带连线，不产生跨宏真实连接",
+        "Y 坐标硬编码 260/180/100，超过图幅会被截断",
+        "页定位依赖本次 CreatePages 建立的页序，重启后回退按页名匹配"
+      ],
+      "verifiedOn": "2026-10",
+      "notes": "需要真实互联请用 DrawSchematic。"
+    },
+    "DrawPlcIo": {
+      "status": "pilot",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "drawing",
+      "params": {},
+      "verify": {
+        "mode": "metrics_min",
+        "field": "macrosInserted",
+        "min": 1
+      },
+      "limits": [
+        "依赖 ESS_Macro 400_PLC_Control 宏路径存在",
+        "宏间无电气互联"
+      ],
+      "verifiedOn": "2026-10",
+      "notes": ""
+    },
+    "DrawLadder": {
+      "status": "pilot",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "drawing",
+      "params": {},
+      "verify": {
+        "mode": "metrics_min",
+        "field": "macrosInserted",
+        "min": 1
+      },
+      "limits": [
+        "只有急停+电源两段，非完整梯形逻辑",
+        "宏间无电气互联"
+      ],
+      "verifiedOn": "2026-10",
+      "notes": ""
+    },
+    "DrawAbbPanel": {
+      "status": "pilot",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "drawing",
+      "params": {
+        "project": "string .elk",
+        "pageName": "string"
+      },
+      "verify": {
+        "mode": "metrics_min",
+        "field": "macrosInserted",
+        "min": 1
+      },
+      "limits": [
+        "9 个宏分区拼贴，仅视觉近似 ABB 柜图，宏之间没有任何真实连接",
+        "不能用于生成报表/端子图/BOM"
+      ],
+      "verifiedOn": "2026-10",
+      "notes": "演示用。要可交付图纸请用 DrawSchematic。"
+    },
+    "DrawSchematic": {
+      "status": "verified",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "drawing",
+      "params": {
+        "project": "string .elk 绝对路径",
+        "spec": "json {items:[{s,t,x,y,v}], links:[{f,fp,t,tp}]}",
+        "pageName": "string 可选，缺省新建 SCHEMATIC 页"
+      },
+      "verify": {
+        "mode": "metrics_delta",
+        "field": "connectionsAfter",
+        "against": "connectionsBefore",
+        "min": 1
+      },
+      "limits": [
+        "符号名必须在 IEC_symbol 库内（先用 ListSymbols 查）",
+        "设备编号只能走 Function.Name setter，属性写法报 S063113",
+        "必须走 PlaceConnectionDefinitionPoints 物化，否则项目数据里 0 根线",
+        "同一进程对已打开的工程再 OpenProject 会全部失败 → 已改为优先复用（2026-11-13 修）",
+        "按页名找页要同时比 Page.Name（是页号如 /6）与 PAGE_NAME 属性（页描述），否则每次都新建页",
+        "不支持图框/幅面修改，不支持逻辑页符号 Scale"
+      ],
+      "verifiedOn": "EPLAN 2.9.4.14642 / 2026-10 阶段3 两次复现；2026-11-13 真机 P0 验收：2 符号 → 连接 0→3，二次调用 before=3/after=6（证明连接已落工程库）",
+      "notes": "当前唯一能产出真实电气连接的绘图动作。"
+    },
+    "ListSymbols": {
+      "status": "verified",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "json",
+      "params": {
+        "project": "string .elk",
+        "keyword": "string 可选"
+      },
+      "verify": {
+        "mode": "metrics_min",
+        "field": "symbolsMatched",
+        "min": 1
+      },
+      "limits": [
+        "每次最多回 60 个/库",
+        "需要能 Exclusive 打开工程"
+      ],
+      "verifiedOn": "2026-10",
+      "notes": ""
+    },
+    "CaptureScreen": {
+      "status": "verified",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "file",
+      "params": {
+        "outputDir": "string 可选，默认 EplanApi/scratch/shots"
+      },
+      "verify": {
+        "mode": "file_reported",
+        "fileField": "file"
+      },
+      "limits": [
+        "抓的是 EPLAN 主窗口当前视图，不裁剪到图纸区域",
+        "GUI 不会因为 API 建页/画图而自动跳转到对应页，抓到的可能是启动画面或别的页",
+        "AddIn 在后台线程同步执行，长任务期间窗口不重绘，两次抓帧之间若没让出执行权会拿到上一帧",
+        "PrintWindow 抓 Qt 窗口若返回纯色会回退 CopyFromScreen；窗口最小化/遮挡时只能拿到黑图，看 suspectBlank"
+      ],
+      "verifiedOn": "2026-11-13 真机：PrintWindow(PW_RENDERFULLCONTENT) 2582x1550，方差 70.86，file_reported 校验通过",
+      "notes": "用于「边画边看」：每步动作后调一次，拿到 PNG 路径后用视觉能力看图。不是实时流。"
+    },
+    "DeletePages": {
+      "status": "pilot",
+      "layer": "addin",
+      "implemented": true,
+      "produces": "state",
+      "params": {
+        "project": "string .elk 绝对路径",
+        "pageName": "string 必填，按页号或页描述模糊匹配",
+        "dryRun": "string 可选，true 时只报匹配不删除"
+      },
+      "verify": {
+        "mode": "metrics_min",
+        "field": "pagesDeleted",
+        "min": 1
+      },
+      "limits": [
+        "按页名/页描述模糊匹配，命中多页会全部删除",
+        "不给 pageName 直接拒绝（不接受『删全部』）",
+        "删除不可撤销（不进回收站）；建议先 dryRun=true 看命中哪些",
+        "dryRun 调用会判 needs_review（因为 pagesDeleted=0），这是预期"
+      ],
+      "verifiedOn": "2026-11-14 新增，待真机验证",
+      "notes": "用途：清理重复页、画错的页。"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "PAGE_FRAME",
+      "title": "页面图框 / 幅面不可用 API 修改",
+      "evidence": "白皮书第 14 节实测；DataModel 无 PlotFrame 写接口",
+      "workaround": "只能在 GUI 里右键页面行改属性；或用带正确图框的模板工程复制"
+    },
+    {
+      "id": "SYMBOL_SCALE",
+      "title": "逻辑页上的符号不能 Scale",
+      "evidence": "实测抛异常；SymbolReference 无 Scale 可写属性",
+      "workaround": "改用不同变体（variant）或换符号"
+    },
+    {
+      "id": "CROSS_PAGE_INTERRUPTION",
+      "title": "跨页中断点不能自动生成",
+      "evidence": "未实现；Insert 只支持 PageMacro/WindowMacro/SymbolMacro/PrePlanningMacro",
+      "workaround": "用 new Connection(prj,pinA,pinB) 建未放置连接 + 手工落中断点符号"
+    },
+    {
+      "id": "PDF_EXPORT",
+      "title": "PDF 导出未实现",
+      "evidence": "Scripts/ExportPdf.cs 为占位脚本",
+      "workaround": "见 actions.ExportPdf.nextSteps"
+    },
+    {
+      "id": "GUI_NAVIGATE",
+      "title": "API 无法让 GUI 跳到指定页",
+      "evidence": "2026-11-13 尝试 GedOpenPage PAGE=/6，ExecuteAction 返回 Succeed=True 但画面未变（截图方差完全相同）",
+      "workaround": "要看见某页只能人工在 EPLAN 里双击打开；或改为导出 PDF/图片再看（ExportPdf 目前 blocked）"
+    }
+  ]
+}

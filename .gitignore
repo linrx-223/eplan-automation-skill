@@ -1,0 +1,28 @@
+# ---- 构建产物 ----
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.dll
+*.pdb
+*.exe
+!tools/*.exe
+
+# ---- 大体积备份（各 79MB，只留本地） ----
+_backup/
+_backup2/
+
+# ---- 运行时产物 ----
+EplanApi/scratch/
+EplanApi/logs/
+**/__pycache__/
+*.pyc
+
+# ---- 本地生成的扫描结果 / 截图 ----
+macro_scan.json
+crop_*.png
+shot-*.png
+
+# ---- 私有工作区记忆 ----
+.workbuddy/

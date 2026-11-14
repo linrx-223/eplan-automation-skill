@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EplanApi</RootNamespace>
+    <AssemblyName>EplanApi</AssemblyName>
+  </PropertyGroup>
+
+  <!-- 启用进程内 EPLAN API 引擎：dotnet run /p:EPLAN_API=true -->
+  <PropertyGroup Condition="'$(EPLAN_API)' == 'true'">
+    <DefineConstants>$(DefineConstants);EPLAN_API</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 示例脚本是给 EPLAN 侧执行的，不要编译进 Web 项目 -->
+    <Compile Remove="Scripts\**\*.cs" />
+    <None Include="Scripts\**\*.cs" CopyToOutputDirectory="PreserveNewest" />
+    <!-- scratch 是实验/临时目录（可能含 EPLAN 侧脚本和临时产物），一律不参与编译 -->
+    <Compile Remove="scratch\**\*.cs" />
+    <None Remove="scratch\**\*" />
+    <!-- 能力注册表随程序集一起输出，保证 dotnet run / 部署后都能读到 -->
+    <None Update="capabilities.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- 仅启用 EPLAN_API 时引用 EPLAN API 程序集（HintPath 按实际安装修改） -->
+  <ItemGroup Condition="'$(EPLAN_API)' == 'true'">
+    <Reference Include="Eplan.EplApi.ApplicationManagement">
+      <HintPath>C:\Program Files\EPLAN\Electric P8\2024.0.3\API\Eplan.EplApi.ApplicationManagement.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.Base">
+      <HintPath>C:\Program Files\EPLAN\Electric P8\2024.0.3\API\Eplan.EplApi.Base.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.HEServices">
+      <HintPath>C:\Program Files\EPLAN\Electric P8\2024.0.3\API\Eplan.EplApi.HEServices.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
