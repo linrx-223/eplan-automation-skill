@@ -166,6 +166,7 @@ EplanAddin/          EPLAN 进程内插件（net48）
 EplanRemote/         通过 EplanCommunicationServer 注入脚本
 EplanDraw/           早期符号级绘图试验工程
 EplanProbe/          环境探针
+物流传输系统/        三段皮带设计包 + 可交互仿真（新手入门示例）
 mcp/                 MCP Server（供 Claude/Cursor 等客户端）
 tools/fake_addin.py  测试替身：无 EPLAN 也能验证证据层
 操作指南.md          从零上手的完整操作手册
